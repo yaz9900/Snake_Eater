@@ -81,7 +81,7 @@ def load_model(modelPath):
 def make_dir(path):
     try:
         os.makedirs(path)
-    except FileExistsError:
+    except e:
         # directory already exists
         pass
 
