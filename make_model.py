@@ -10,25 +10,27 @@ from snake_engine import game_table
 from utils import make_dir
 
 
-modelPath = "models/conv_v1/"
-size = 40
+modelPath = "models/test/"
+size = 10
 make_dir(modelPath)
 
-model_input = Input(shape=(size,size,1))
-
-conv = keras.layers.Conv2D(32, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(model_input)
+conv_input = Input(shape=(size,size,2))
+conv = keras.layers.Conv2D(8, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv_input)
 conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv = keras.layers.Conv2D(32, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv)
-conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv = keras.layers.Conv2D(32, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv)
+conv = keras.layers.Conv2D(8, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv)
 conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
 conv_out = keras.layers.Flatten()(conv)
+conv_model = Model(conv_input, conv_out)
 
-x = keras.layers.Dense(256, activation = 'relu')(conv_out)
-x = keras.layers.Dense(128, activation = 'relu')(x)
-predictions = keras.layers.Dense(4, activation = 'relu')(x)
+model_input = Input(shape=(None,size,size,2))
+state_input = Input(shape=(128,))
 
-model = Model(model_input, predictions)
+x = keras.layers.TimeDistributed(conv_model)(model_input)
+x, state_output = keras.layers.GRU(128, activation = 'relu', return_sequences = True, return_state = True)(x, initial_state = state_input)
+x = keras.layers.Dense(64, activation = 'relu')(x)
+predictions = keras.layers.Dense(4, activation = 'softmax')(x)
+
+model = Model([model_input] + [state_input], [predictions] + [state_output])
 model.compile(optimizer = 'adam', loss='mean_squared_error')
 print(model.summary())
 
@@ -38,7 +40,7 @@ model_json = model.to_json()
 with open(modelPath+"model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model.save_weights(modelPath+"model_1.h5")
+model.save_weights(modelPath+"model.h5")
 print("Saved model to disk")
 
 

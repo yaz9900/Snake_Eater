@@ -42,6 +42,7 @@ class game_generator():
                 counter += 1
                 if counter >= 500:
                     break
+            print(game.get_snake())
 
         #augment data
         game.adjust_reward()
@@ -149,28 +150,53 @@ class NeuralNetwork:
 
 def generator(modelPath, size, fr, epochLength):
     model = NeuralNetwork(modelPath)
-    game  = game_table(size = size,
-                    fr = fr)                
     while True:
-        #initiate a game
-        model.load()
-        game.reset_board()
+        model.load()  
         alive = True
-        counter = 0
-        #play the game
+        game =  game_table(size = size,
+                    fr = fr)
+        boards = []
+        moves = []
+        state = np.zeros((1,128))
         while alive:
-            counter += 1
-            board = game.get_board()
-            board = board[np.newaxis, :]
-            move = model.predict(board)
-            alive, fed = game.take_turn(move)
-            if fed:
-                counter = 0
-            else:
-                counter += 1
-                if counter >= 500:
-                    break
+            size, snake, food = game.get_tiles()
+            board = make_board(size, snake, food)
+            moveInput = [board]+[state]
+            move, state  = model.predict(moveInput)
+            temp = move + np.random.random(move.shape)*0.05
+            direction = np.argmax(temp[0][0])
+            alive, _ = game.take_turn(direction)
+            boards.append(board)
+            moves.append(move)
+        print("SCORE:", game.get_score())
+        
+        rewards = game.get_rewards()
+        moves, _ =salt_moves(moves, rewards, fr)
 
-        #augment data
-        x,y = game.parse_data()
-        yield x, y
+        x = np.concatenate(boards, axis=1)
+        y = np.concatenate(moves, axis=1)
+
+        yield [x, np.zeros((1,128))], [y, state]
+
+
+def make_board(size, snake, food):
+    board = np.zeros((1,1,size, size, 2))
+    for tile in snake:
+        x, y = tile
+        board[0,0,x,y,0] = 1
+
+    x, y = food
+    board[0,0,x,y,1] = 1 
+    return board
+
+def salt_moves(moves, rewards, fr):
+    running_reward = 0
+    for reward in reversed(rewards):
+        running_reward += reward - 0.001
+        reward = running_reward
+        running_reward = running_reward * fr
+    for move, reward in zip(moves, rewards):
+        index = np.argmax(move[0,0])
+        value = move[0,0,index]
+        move[0,0,index] = value + reward
+    return moves, rewards

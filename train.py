@@ -11,25 +11,35 @@ import utils
 
 
 
-modelPath= "models/conv_v1/"
+modelPath= "models/test/"
 make_dir(modelPath)
-
-epochs = 10
-length = 100
-fr = 0.5
-size = 40
+filepath = modelPath + "model.h5"
+epochs = 200
+length = 10
+fr = 0.95
+size = 10
 
 generator = utils.generator(modelPath, size, fr, length)
 
 model = NeuralNetwork(modelPath)
 model.load()
 
+callbacks = [keras.callbacks.ModelCheckpoint(filepath, monitor="epoch", 
+                                             verbose=1, save_best_only=False, 
+                                             save_weights_only=True, mode='auto', 
+                                             period=1)]
+# loss_down = keras.callbacks.ModelCheckpoint(filepath, monitor="loss", 
+#                                              verbose=1, save_best_only=False, 
+#                                              save_weights_only=True, mode='min', 
+#                                              period=1)                            
+# callbacks = [loss_up, loss_down]                 
 model.fit_generator(generator,
                     epochs=epochs,
                     steps_per_epoch=length,
-                    max_queue_size = 2,
+                    max_queue_size = 1,
                     use_multiprocessing=False,
-                    workers = 0)
+                    workers = 0,
+                    callbacks = callbacks)
 
 
 
