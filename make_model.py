@@ -24,8 +24,8 @@ model_reshape = Model(model_reshape_input, model_reshape)
 
 x = keras.layers.TimeDistributed(model_reshape)(model_input)
 print(x.shape)
-x, state_output = keras.layers.GRU(128, activation = 'relu', return_sequences = True, return_state = True)(x, initial_state = state_input)
-x = keras.layers.Dense(64, activation = 'relu')(x)
+x, state_output = keras.layers.GRU(128, activation = 'tanh', return_sequences = True, return_state = True)(x, initial_state = state_input)
+x = keras.layers.Dense(64, activation = 'tanh')(x)
 predictions = keras.layers.Dense(4, activation = 'softmax')(x)
 
 model = Model([model_input] + [state_input], [predictions] + [state_output])

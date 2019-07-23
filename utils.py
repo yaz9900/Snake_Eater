@@ -186,7 +186,7 @@ def make_board(size, snake, food):
         board[0,0,x,y] = 1
 
     x, y = food
-    board[0,0,x,y] = 1 
+    board[0,0,x,y] = -1 
     return board
 
 def salt_moves(moves, rewards, fr):
