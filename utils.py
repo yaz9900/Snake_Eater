@@ -180,13 +180,13 @@ def generator(modelPath, size, fr, epochLength):
 
 
 def make_board(size, snake, food):
-    board = np.zeros((1,1,size, size, 2))
+    board = np.zeros((1,1,size, size))
     for tile in snake:
         x, y = tile
-        board[0,0,x,y,0] = 1
+        board[0,0,x,y] = 1
 
     x, y = food
-    board[0,0,x,y,1] = 1 
+    board[0,0,x,y] = 1 
     return board
 
 def salt_moves(moves, rewards, fr):

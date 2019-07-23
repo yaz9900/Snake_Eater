@@ -14,22 +14,16 @@ modelPath = "models/test/"
 size = 10
 make_dir(modelPath)
 
-conv_input = Input(shape=(size,size,2))
-conv = keras.layers.Conv2D(16, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv_input)
-conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv = keras.layers.Conv2D(16, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv)
-conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv = keras.layers.Conv2D(16, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv_input)
-conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv = keras.layers.Conv2D(16, (3,3), strides=(1, 1), padding='valid', activation = 'tanh')(conv)
-conv = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(conv)
-conv_out = keras.layers.Flatten()(conv)
-conv_model = Model(conv_input, conv_out)
 
-model_input = Input(shape=(None,size,size,2))
+model_input = Input(shape=(None,size,size))
 state_input = Input(shape=(128,))
 
-x = keras.layers.TimeDistributed(conv_model)(model_input)
+model_reshape_input = Input(shape=(size,size))
+model_reshape = keras.layers.Reshape((size**2,))(model_reshape_input)
+model_reshape = Model(model_reshape_input, model_reshape)
+
+x = keras.layers.TimeDistributed(model_reshape)(model_input)
+print(x.shape)
 x, state_output = keras.layers.GRU(128, activation = 'relu', return_sequences = True, return_state = True)(x, initial_state = state_input)
 x = keras.layers.Dense(64, activation = 'relu')(x)
 predictions = keras.layers.Dense(4, activation = 'softmax')(x)
